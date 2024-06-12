@@ -41,7 +41,8 @@ const Chat = () => {
     setInput(''); // Reset input field
 
     try {
-      const response = await axios.post('http://localhost:5001/api/chat', formData, {
+        const response = await axios.post('https://chatclient-ngv7.onrender.com/api/chat', formData, {
+        // const response = await axios.post('http://localhost:5001/api/chat', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
