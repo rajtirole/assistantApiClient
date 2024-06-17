@@ -18,7 +18,17 @@ const Login = ({ history }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await apiClient.post('/auth/login', { email, password });
+
+        let options = {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            url: `https://assistantapiserver.onrender.com/auth/login`,
+            withCookies: true,
+            withCredentials: true,
+            data: { email, password },
+          };
+          const response = await axios(options);
+    //   const response = await apiClient.post('/auth/login', { email, password });
       login(response.data.token);
       console.log(response);
    if(response.data.success){
