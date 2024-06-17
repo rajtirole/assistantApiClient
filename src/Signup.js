@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
-
+import apiClient from './api'
 
 const Signup = ({ history }) => {
   const [username, setUsername] = useState('');
@@ -16,7 +16,7 @@ const Signup = ({ history }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/auth/register', { username, email, password });
+      const response = await apiClient.post('/auth/register', { username, email, password });
       login(response.data.token);
      navigate('/login')
     } catch (error) {
