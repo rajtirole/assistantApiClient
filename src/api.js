@@ -4,6 +4,7 @@ import axios from 'axios';
 const apiClient = axios.create({
     baseURL: 'https://assistantapiserver.onrender.com',
   withCredentials: true, // Send cookies with requests
+  withCookies: true,
 });
 
 export default apiClient;
