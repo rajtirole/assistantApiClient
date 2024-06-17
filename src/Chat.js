@@ -1,26 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import './Chat.css'; // Make sure this path is correct based on your project structure
+import './Chat.css';
 import image from './assets/icons8-chatbot-24.png';
+import { useAuth } from './AuthContext';
+import apiClient from './api';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const Chat = () => {
+  const { auth } = useAuth();
+  const { id } = useParams(); // Get the threadid from the URL
+  const navigate = useNavigate();
   const [messages, setMessages] = useState(() => {
     const savedMessages = localStorage.getItem('messages');
     return savedMessages ? JSON.parse(savedMessages) : [];
   });
   const [input, setInput] = useState('');
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false); // State for loading
-  const chatContainerRef = useRef(null); // Ref for the chat container
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const chatContainerRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // Effect to scroll to the bottom whenever messages change
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Effect to save messages to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('messages', JSON.stringify(messages));
   }, [messages]);
@@ -31,30 +36,35 @@ const Chat = () => {
     const userMessage = { sender: 'user', text: input };
 
     setMessages([...messages, userMessage]);
-    setLoading(true); // Set loading to true when message is sent
+    setLoading(true);
 
     const formData = new FormData();
     formData.append('message', input);
-    if (file) {
-      formData.append('file', file);
+    for (const file of files) {
+      formData.append('files', file); // Use 'files' if your backend expects it
     }
-    setInput(''); // Reset input field
+    setInput('');
 
     try {
-        const response = await axios.post('https://chatclient-ngv7.onrender.com/api/chat', formData, {
-        // const response = await axios.post('http://localhost:5001/api/chat', formData, {
+      const response = await apiClient.post(`/chat/${id}`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          'Content-Type': 'multipart/form-data',
+          'x-auth-token': auth.token,
+        },
       });
+
+      if (id !== response?.data?.threadId) {
+        navigate(`/chat/${response?.data?.threadId}`);
+      }
       const botMessage = { sender: 'bot', text: response.data.message };
       setMessages((prevMessages) => [...prevMessages, botMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
     }
 
-    setLoading(false); // Set loading to false when response is received
-    setFile(null); // Reset file input
+    setLoading(false);
+    setFiles([]);
+    fileInputRef.current.value = ''; // Clear file input
   };
 
   const handleKeyDown = (event) => {
@@ -64,7 +74,7 @@ const Chat = () => {
   };
 
   const handleFileChange = (event) => {
-    setFile(event.target.files[0]);
+    setFiles(Array.from(event.target.files));
   };
 
   return (
@@ -73,17 +83,17 @@ const Chat = () => {
         <img src={image} alt="Chatbot Icon" />
       </div>
       <div className="chatContainer">
-        <div className='box1' ref={chatContainerRef}> {/* Added ref to the box1 */}
+        <div className='box1' ref={chatContainerRef}>
           {messages.map((msg, index) => (
             <div key={index} className={`message ${msg.sender}`}>
               {msg.text}
             </div>
           ))}
-          {loading && <div className="loading">Thinking...</div>} {/* Loading indicator */}
+          {loading && <div className="loading">Thinking...</div>}
         </div>
         <div className="inputContainer">
           <div className='input'>
-            <input 
+            <input
               className='box2'
               type="text"
               value={input}
@@ -95,12 +105,14 @@ const Chat = () => {
               className='box3'
               type="file"
               onChange={handleFileChange}
+              multiple
+              ref={fileInputRef}
             />
           </div>
           <button onClick={sendMessage}>Send</button>
         </div>
         <div className='box4'>
-          <h5>* Allowed files-.xls, .pdf, .csv, .xlsx, .doc, .docx, .jpg, .png, .jpeg</h5>
+          <h5>* Allowed files - .xls, .pdf, .xlsx, .doc, .docx</h5>
         </div>
       </div>
     </div>
